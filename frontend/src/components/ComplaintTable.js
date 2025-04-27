@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Table,
   TableHead,
@@ -17,23 +18,47 @@ import {
   DialogTitle,
   TextField,
   Typography,
-  styled,
-  Tooltip
+  Modal,
+  Box,
+  Tooltip,
+  IconButton
 } from '@mui/material';
 
-const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
+const ComplaintTable = ({ statusUpdated, setStatusUpdated }) => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [complaint, setComplaint] = useState('');
+
   const [open, setOpen] = useState(false); // Modal open state
   const [review, setReview] = useState(''); // Review text state
   const [complaintId, setComplaintId] = useState();
   const [complaintIds, setComplaintIds] = useState([]);
   const [review_obj, setReview_obj] = useState({});
 
-  const complaintStatus = {'Assigned': 'Processing', 'Processing': 'Completed'}
+  const complaintStatus = { 'Assigned': 'Processing', 'Processing': 'Completed' }
 
   const navigate = useNavigate();
+
+  const style = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    border: '2px solid #000',
+    boxShadow: 24,
+    p: 4,
+  };
+
+
+  const [openComplaint, setOpenComplaint] = useState(false);
+
+  function handleOpenComplaint(text) {
+    setComplaint(text);
+    setOpenComplaint(true)
+  };
+  const handleCloseComplaint = () => setOpenComplaint(false);
 
   // Fetch user data when component mounts
   useEffect(() => {
@@ -86,7 +111,7 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
   const handleSubmit = () => {
     console.log('Review submitted:', review);
     const AuthStr = 'Bearer '.concat(localStorage.getItem('token'));
-    if(complaintIds.includes(complaintId)) {
+    if (complaintIds.includes(complaintId)) {
       axios.put(`http://127.0.0.1:8000/complaint/update_review/${complaintId}`, {
         review_note: review,
         complaint: complaintId
@@ -95,7 +120,7 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
         setStatusUpdated(!statusUpdated)
         handleClose(); // Close modal after submission
       }).catch((err) => console.log(err))
-    }else{
+    } else {
       axios.post('http://127.0.0.1:8000/complaint/create_review', {
         review_note: review,
         complaint: complaintId
@@ -140,7 +165,6 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
         <TableHead>
           <TableRow>
             <TableCell sx={{ color: '#fff' }}>Date</TableCell>
-            <TableCell sx={{ color: '#fff' }}>Complaint Id</TableCell>
             <TableCell sx={{ color: '#fff' }}>Client Name</TableCell>
             <TableCell sx={{ color: '#fff' }}>Client Phone</TableCell>
             <TableCell sx={{ color: '#fff' }}>Assigned User</TableCell>
@@ -153,13 +177,20 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
           {complaints.map((complaint) => (
             <TableRow key={complaint.id}>
               <TableCell sx={{ color: '#fff' }}>{complaint.date}</TableCell>
-              <TableCell sx={{ color: '#fff' }}>{complaint.id}</TableCell>
               <TableCell sx={{ color: '#fff' }}>{complaint.username}</TableCell>
               <TableCell sx={{ color: '#fff' }}>{complaint.user_phone}</TableCell>
               <TableCell sx={{ color: '#fff' }}>{complaint.assigned_user.username}</TableCell>
               <TableCell sx={{ color: '#fff' }}>{complaint.level}</TableCell>
               <TableCell sx={{ color: '#fff' }}>{complaint.status}</TableCell>
               <TableCell>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  sx={{ color: '#fff', borderColor: '#fff', marginRight: 1 }}
+                  onClick={() => handleOpenComplaint(complaint.complaint_note)}
+                >
+                  View Complaint
+                </Button>
                 {localStorage.getItem('is_admin') && <Button
                   variant="outlined"
                   size="small"
@@ -171,7 +202,7 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
                 {!localStorage.getItem('is_admin') &&
                   <> {complaint.status !== 'Completed' ?
                     <Tooltip
-                      title= {'set status to '+ complaintStatus[complaint.status]}
+                      title={'set status to ' + complaintStatus[complaint.status]}
                     >
                       <Button
                         variant="outlined"
@@ -210,7 +241,7 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
 
       {/* Review Modal */}
       <Dialog open={open} onClose={handleClose} fullWidth>
-        {localStorage.getItem('is_admin') ? <DialogTitle>Review</DialogTitle>:<DialogTitle>Write a Review</DialogTitle>}
+        {localStorage.getItem('is_admin') ? <DialogTitle>Review</DialogTitle> : <DialogTitle>Write a Review</DialogTitle>}
         <DialogContent>
           {!localStorage.getItem('is_admin') && <Typography variant="body2" color="textSecondary" gutterBottom>
             Please share your feedback with us:
@@ -236,6 +267,19 @@ const ComplaintTable = ({statusUpdated, setStatusUpdated}) => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Modal open={openComplaint} onClose={handleCloseComplaint}>
+        <Box sx={style}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">Complaint</Typography>
+            <IconButton onClick={handleCloseComplaint}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Typography sx={{ mt: 2 }}>
+            {complaint}
+          </Typography>
+        </Box>
+      </Modal>
     </TableContainer>
   );
 };
