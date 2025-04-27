@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import CardRow from '../components/CardRow';
 import UserTable from '../components/UserTable';
 import ComplaintTable from '../components/ComplaintTable';
+import axios from 'axios';
 
 function Home() {
   const navigate = useNavigate();
@@ -12,8 +13,16 @@ function Home() {
 
   const handleLogout = () => {
     // Clear tokens or auth state if needed
+    const AuthStr = 'Bearer '.concat(localStorage.getItem('token'));
+    axios.post('http://127.0.0.1:8000/user/logout', {
+      refresh: localStorage.getItem('refresh_token')
+    },
+    { headers: { Authorization: AuthStr } }).then((res)=>
+      console.log(res)
+    ).catch((err)=>console.log(err))
     localStorage.removeItem('token')
     localStorage.removeItem('is_admin')
+    localStorage.removeItem('refresh_token')
     navigate('/');
   };
 

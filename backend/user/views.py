@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .serializers import MyTokenObtainPairSerializer, CreateUserSerializer, UserSerializer
 from .models import CustomUser
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 # Create your views here.
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -52,3 +53,18 @@ def get_user(request, id):
 def delete_user(request, id):
     CustomUser.objects.get(id=id).delete()
     return Response({"status":"Success"})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    refresh_token = request.data.get("refresh")
+
+    if refresh_token is None:
+        return Response({"status":"Error", "detail": "Refresh token is required."})
+
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"status":"Success"})
+    except TokenError:
+        return Response({"status":"Error", "detail": "Invalid or expired token."})

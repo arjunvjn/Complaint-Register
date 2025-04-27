@@ -43,6 +43,7 @@ function Login() {
         const user = jwtDecode(res.data.access);
         console.log(user)
         localStorage.setItem('token',res.data.access)
+        localStorage.setItem('refresh_token',res.data.refresh)
         if (user.is_admin)
           localStorage.setItem('is_admin',user.is_admin)
         navigate('/home')
